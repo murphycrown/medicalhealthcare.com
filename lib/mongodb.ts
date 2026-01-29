@@ -1,5 +1,5 @@
 import { MongoClient } from "mongodb";
-
+require("node:dns/promises").setServers(["1.1.1.1", "8.8.8.8"]);
 const uri = process.env.MONGODB_URI!;
 let client: MongoClient;
 let clientPromise: Promise<MongoClient>;

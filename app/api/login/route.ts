@@ -1,8 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { getIronSession } from "iron-session";
 import bcrypt from "bcryptjs";
+import { sessionOptions, SessionData } from "@/lib/session";
 import clientPromise from "@/lib/mongodb";
 
-export async function POST(req: Request) {
+import dns from "node:dns/promises";
+dns.setServers(["1.1.1.1", "8.8.8.8"]);
+export async function POST(req: NextRequest) {
   try {
     const { email, password } = await req.json();
 
@@ -24,8 +28,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Invalid credentials" }, { status: 401 });
     }
 
-    // ✅ For now, just return success and user ID
-    return NextResponse.json({ message: "Login successful", userId: user._id });
+    const response = NextResponse.json({ message: "Login successful", userId: user._id });
+    const session = await getIronSession<SessionData>(req, response, sessionOptions);
+
+    session.user = {
+      id: user._id.toString(),
+      email: user.email,
+      name: user.name,
+    };
+    await session.save();
+
+    return response;
   } catch (err) {
     console.error(err);
     return NextResponse.json({ message: "Server error" }, { status: 500 });

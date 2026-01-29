@@ -208,7 +208,8 @@ export default function Home() {
         setError(data.message || "Invalid credentials");
         return;
       }
-
+      //sillllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllll
+     console.log(data)
       // Login success → for now just redirect
       router.push("/main");
     } catch (err) {
