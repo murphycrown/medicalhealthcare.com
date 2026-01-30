@@ -2,6 +2,9 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { Sparkles, User, Send, Brain, ChevronRight, Loader2, Menu, X } from "lucide-react";
 
 // --- Particle Animation Component (Reused from landing page for consistency) ---
 const ParticleBackground = () => {
@@ -145,8 +148,8 @@ const SidebarItem = ({ icon, label, id, active, onClick }: any) => (
     <button
         onClick={() => onClick(id)}
         className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-300 ${active
-                ? "bg-blue-600/20 text-blue-400 border border-blue-500/20"
-                : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
+            ? "bg-blue-600/20 text-blue-400 border border-blue-500/20"
+            : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
             }`}
     >
         <div className={`${active ? "text-blue-400" : "text-slate-500"}`}>{icon}</div>
@@ -177,72 +180,167 @@ const StatCard = ({ title, value, unit, icon, color, trend }: any) => (
 );
 
 const MessageBubble = ({ role, content, time }: any) => (
-    <div className={`flex flex-col ${role === 'user' ? 'items-end' : 'items-start'} mb-4`}>
-        <div className={`max-w-[80%] p-4 rounded-2xl text-sm ${role === 'user'
-                ? "bg-blue-600 text-white rounded-tr-none shadow-lg shadow-blue-500/20"
-                : "bg-white/5 border border-white/10 text-slate-200 rounded-tl-none backdrop-blur-md"
-            }`}>
-            {content}
+    <div className={`flex flex-col ${role === 'user' ? 'items-end' : 'items-start'} mb-6 group animate-in slide-in-from-bottom-2 duration-300`}>
+        <div className={`flex items-start gap-3 max-w-[85%] ${role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border ${role === 'user'
+                ? "bg-blue-600/20 border-blue-500/30 text-blue-400"
+                : "bg-teal-500/20 border-teal-500/30 text-teal-400 shadow-[0_0_15px_rgba(45,212,191,0.2)]"
+                }`}>
+                {role === 'user' ? <User size={14} /> : <Brain size={14} />}
+            </div>
+
+            <div className={`p-4 rounded-2xl text-sm leading-relaxed ${role === 'user'
+                ? "bg-blue-600 text-white rounded-tr-none shadow-lg shadow-blue-500/10"
+                : "bg-white/[0.03] border border-white/10 text-slate-200 rounded-tl-none backdrop-blur-md shadow-xl"
+                }`}>
+                <div className={`prose prose-invert prose-sm max-w-none ${role === 'user' ? '[&_p]:text-white' : '[&_p]:text-slate-200'}`}>
+                    <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                            p: ({ children }) => <p className="mb-0 last:mb-0">{children}</p>,
+                            ul: ({ children }) => <ul className="list-disc ml-4 space-y-1 my-2">{children}</ul>,
+                            ol: ({ children }) => <ol className="list-decimal ml-4 space-y-1 my-2">{children}</ol>,
+                            code: (props: any) => {
+                                const { children, className, node, ...rest } = props;
+                                const match = /language-(\w+)/.exec(className || '');
+                                return match ? (
+                                    <pre className="bg-black/40 p-3 rounded-lg overflow-x-auto my-2 border border-white/5">
+                                        <code className={className} {...rest}>{children}</code>
+                                    </pre>
+                                ) : (
+                                    <code className="bg-white/10 px-1 py-0.5 rounded text-teal-300" {...rest}>{children}</code>
+                                )
+                            },
+                            table: ({ children }) => (
+                                <div className="overflow-x-auto my-3 rounded-lg border border-white/10">
+                                    <table className="w-full text-left border-collapse">{children}</table>
+                                </div>
+                            ),
+                            th: ({ children }) => <th className="bg-white/5 p-2 text-xs font-bold border-b border-white/10">{children}</th>,
+                            td: ({ children }) => <td className="p-2 text-xs border-b border-white/5">{children}</td>,
+                        }}
+                    >
+                        {content}
+                    </ReactMarkdown>
+                </div>
+            </div>
         </div>
-        <span className="text-[10px] text-slate-500 mt-1 mx-1">{time}</span>
+        <span className={`text-[10px] text-slate-500 mt-2 px-11 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300`}>
+            {time}
+        </span>
     </div>
 );
 
 // --- Main Page Component ---
 
 export default function MainPage() {
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [activeTab, setActiveTab] = useState("overview");
-    const [name, setName] = useState("Dr. Alex Chen");
-    const [email, setEmail] = useState("alex.chen@medai.io");
+    const [name, setName] = useState("");
+    const [email, setEmail] = useState("");
     const [message, setMessage] = useState("");
     const [chatHistory, setChatHistory] = useState([
-        { role: 'assistant', content: 'Hello Dr. Chen. I have analyzed the recent patient data. Would you like to see the report on Cardiac health trends?', time: '10:30 AM' }
+        { role: 'assistant', content: 'Hi, I am your MediAI assistant. How can I help you today?', time: '10:30 AM' }
     ]);
+    const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
-  
+    const chatEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    fetch("/api/me")
-      .then(res => {
-        if (!res.ok) throw new Error("Not logged in");
-        return res.json();
-      })
-      .then(data => {setName(data.user.name);setEmail(data.user.email)})
-      .catch(() => router.push("/"));
-  }, [router]);
+    const scrollToBottom = () => {
+        chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
 
-  if (!name) return <p>Loading...</p>;
+    useEffect(() => {
+        scrollToBottom();
+    }, [chatHistory, isLoading]);
 
-    const handleSendMessage = (e: React.FormEvent) => {
+    useEffect(() => {
+        fetch("/api/me")
+            .then(res => {
+                if (!res.ok) throw new Error("Not logged in");
+                return res.json();
+            })
+            .then(data => { setName(data.user.name); setEmail(data.user.email) })
+            .catch(() => router.push("/login"));
+    }, [router]);
+    const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!message.trim()) return;
+        if (!message.trim() || isLoading) return;
 
-        const newMessage = { role: 'user', content: message, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
-        setChatHistory([...chatHistory, newMessage]);
+        const userMessage = {
+            role: 'user',
+            content: message,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+
+        setChatHistory(prev => [...prev, userMessage]);
+        const currentMessage = message;
         setMessage("");
+        setIsLoading(true);
 
-        // Simple AI "reply" after 1s
-        setTimeout(() => {
+        try {
+            const response = await fetch("/api/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: currentMessage }),
+            });
+
+            if (!response.ok) throw new Error("API call failed");
+
+            const aiText = await response.json();
+
             setChatHistory(prev => [...prev, {
                 role: 'assistant',
-                content: `Analyzing query: "${message}". Based on the current clinical parameters, the patient shows a 12% improvement in oxygen saturation levels. Recommendation: Maintain current dosage.`,
+                content: typeof aiText === 'string' ? aiText : (aiText.message || "I encountered an error."),
                 time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             }]);
-        }, 1000);
+        } catch (error) {
+            console.error("Chat error:", error);
+            setChatHistory(prev => [...prev, {
+                role: 'assistant',
+                content: "Sorry, I'm having trouble connecting to the medical clinical system right now. Please try again later.",
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            }]);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
 
     const Signout = () => {
         fetch("/api/logout", { method: "POST" })
-          .then(() => router.push("/"))
-          .catch(() => alert("Failed to sign out"));
-      };
+            .then(() => router.push("/"))
+            .catch(() => alert("Failed to sign out"));
+    };
     return (
         <main className="min-h-screen bg-[#050B14] text-slate-200 flex overflow-hidden relative">
             <ParticleBackground />
 
+            {/* Mobile Toggle Button */}
+            <button
+                onClick={() => setIsSidebarOpen(true)}
+                className="lg:hidden fixed top-6 left-6 z-30 p-3 bg-white/5 border border-white/10 rounded-2xl text-slate-300 backdrop-blur-md hover:bg-white/10 transition-colors"
+            >
+                <Menu size={20} />
+            </button>
+
+            {/* Backdrop */}
+            {isSidebarOpen && (
+                <div
+                    className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity animate-in fade-in duration-300"
+                    onClick={() => setIsSidebarOpen(false)}
+                />
+            )}
+
             {/* Navigation Sidebar */}
-            <aside className="w-72 border-r border-white/10 backdrop-blur-2xl bg-black/20 flex flex-col p-6 z-20">
+            <aside className={`w-72 border-r border-white/10 backdrop-blur-2xl bg-black/20 flex flex-col p-6 z-50 fixed lg:relative inset-y-0 left-0 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                {/* Mobile Close Button */}
+                <button
+                    onClick={() => setIsSidebarOpen(false)}
+                    className="lg:hidden absolute top-6 right-6 p-2 text-slate-400 hover:text-white transition-colors"
+                >
+                    <X size={20} />
+                </button>
                 <div className="flex items-center gap-3 mb-12">
                     <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-teal-400 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white">
@@ -294,7 +392,7 @@ export default function MainPage() {
             </aside>
 
             {/* Main Content Area */}
-            <section className="flex-1 overflow-y-auto p-10 z-10 relative">
+            <section className="flex-1 overflow-y-auto p-6 md:p-10 pt-20 lg:pt-10 z-10 relative">
                 <div className="max-w-6xl mx-auto">
 
                     {activeTab === "overview" && (
@@ -416,43 +514,86 @@ export default function MainPage() {
                     )}
 
                     {activeTab === "chat" && (
-                        <div className="h-[calc(100vh-160px)] flex flex-col animate-in fade-in zoom-in-95 duration-500">
-                            <div className="mb-6">
-                                <h2 className="text-3xl font-bold text-white tracking-tight">AI Clinical Assistant</h2>
-                                <p className="text-slate-400 mt-1">Real-time medical reasoning and database retrieval.</p>
-                            </div>
-
-                            <div className="flex-1 overflow-y-auto mb-6 pr-4 scrollbar-hide">
-                                {chatHistory.map((chat, i) => (
-                                    <MessageBubble key={i} {...chat} />
-                                ))}
-                            </div>
-
-                            <form onSubmit={handleSendMessage} className="relative group">
-                                <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#050B14] to-transparent pointer-events-none -mb-32" />
-                                <div className="relative flex gap-3 backdrop-blur-xl bg-white/5 border border-white/10 p-2 rounded-3xl focus-within:border-blue-500/50 transition-all shadow-2xl">
-                                    <input
-                                        type="text"
-                                        value={message}
-                                        onChange={(e) => setMessage(e.target.value)}
-                                        placeholder="Ask the AI about patient records, diagnostics, or trends..."
-                                        className="flex-1 bg-transparent border-none outline-none px-4 py-3 text-sm text-white placeholder:text-slate-600"
-                                    />
-                                    <button
-                                        type="submit"
-                                        className="p-3 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl transition-all shadow-lg shadow-blue-500/20 active:scale-95"
-                                    >
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" /></svg>
-                                    </button>
+                        <div className="h-[calc(100vh-140px)] flex flex-col animate-in fade-in zoom-in-[0.98] duration-700">
+                            <div className="mb-8 flex justify-between items-end">
+                                <div>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <div className="w-2 h-2 rounded-full bg-teal-400 shadow-[0_0_8px_rgba(45,212,191,0.5)] animate-pulse" />
+                                        <span className="text-[10px] font-bold text-teal-400 uppercase tracking-widest">System Active</span>
+                                    </div>
+                                    <h2 className="text-3xl font-bold text-white tracking-tight flex items-center gap-3">
+                                        AI Clinical Assistant
+                                        <div className="px-2 py-0.5 rounded text-[10px] bg-blue-600/20 text-blue-400 border border-blue-500/20 uppercase tracking-tighter">v3.5-flash</div>
+                                    </h2>
+                                    <p className="text-slate-400 mt-1">Real-time medical reasoning and database retrieval.</p>
                                 </div>
-                                <div className="flex justify-center gap-4 mt-4">
-                                    {["Summarize Records", "Analyze Lab Results", "Research Literature"].map((tag) => (
-                                        <button key={tag} onClick={() => setMessage(tag)} type="button" className="text-[10px] uppercase tracking-wider font-bold text-slate-500 hover:text-blue-400 border border-white/5 hover:border-blue-500/20 px-3 py-1.5 rounded-full transition-all bg-white/5">
-                                            {tag}
-                                        </button>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto mb-6 pr-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+                                <div className="space-y-2">
+                                    {chatHistory.map((chat, i) => (
+                                        <MessageBubble key={i} {...chat} />
                                     ))}
+                                    {isLoading && (
+                                        <div className="flex items-start gap-3 mb-6 animate-pulse">
+                                            <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 border bg-teal-500/20 border-teal-500/30 text-teal-400">
+                                                <Brain size={14} className="animate-spin-slow" />
+                                            </div>
+                                            <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 text-slate-400 rounded-tl-none backdrop-blur-md flex items-center gap-2">
+                                                <Loader2 size={16} className="animate-spin" />
+                                                <span className="text-xs font-medium italic">MediAI is analyzing...</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                    <div ref={chatEndRef} />
                                 </div>
-                            </form>
+                            </div>
+
+                            <div className="relative">
+                                <form onSubmit={handleSendMessage} className="relative z-10">
+                                    <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 p-2 rounded-[32px] focus-within:border-blue-500/50 focus-within:bg-white/[0.05] transition-all shadow-2xl group/input">
+                                        <div className="flex items-center gap-2">
+                                            <div className="pl-4 text-slate-500">
+                                                <Sparkles size={18} />
+                                            </div>
+                                            <input
+                                                type="text"
+                                                value={message}
+                                                onChange={(e) => setMessage(e.target.value)}
+                                                disabled={isLoading}
+                                                placeholder="Ask about patient records, diagnostic criteria, or medical literature..."
+                                                className="flex-1 bg-transparent border-none outline-none py-4 text-sm text-white placeholder:text-slate-600 disabled:opacity-50"
+                                            />
+                                            <button
+                                                type="submit"
+                                                disabled={isLoading || !message.trim()}
+                                                className="mr-1 p-3.5 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 disabled:from-slate-800 disabled:to-slate-900 text-white rounded-[24px] transition-all shadow-lg hover:shadow-blue-500/20 active:scale-95 disabled:cursor-not-allowed group-hover/input:scale-105"
+                                            >
+                                                <Send size={18} fill="currentColor" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-wrap justify-center gap-3 mt-6">
+                                        {[
+                                            { label: "Patient Summary", icon: <User size={12} /> },
+                                            { label: "Analyze Lab Results", icon: <Brain size={12} /> },
+                                            { label: "Search Literature", icon: <Sparkles size={12} /> }
+                                        ].map((tag) => (
+                                            <button
+                                                key={tag.label}
+                                                onClick={() => setMessage(tag.label)}
+                                                disabled={isLoading}
+                                                type="button"
+                                                className="text-[10px] uppercase tracking-wider font-bold text-slate-500 hover:text-blue-400 border border-white/5 hover:border-blue-500/20 px-4 py-2 rounded-xl transition-all bg-white/[0.02] hover:bg-white/[0.05] flex items-center gap-2"
+                                            >
+                                                {tag.icon}
+                                                {tag.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </form>
+                                <div className="absolute -inset-4 bg-blue-500/5 blur-3xl rounded-full pointer-events-none -z-10" />
+                            </div>
                         </div>
                     )}
 

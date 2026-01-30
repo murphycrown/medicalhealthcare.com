@@ -1,7 +1,8 @@
 import clientPromise from "@/lib/mongodb";
 import { NextResponse } from "next/server";
-require("node:dns/promises").setServers(["1.1.1.1", "8.8.8.8"]);
+require("node:dns/promises").setServers(["8.8.8.8", "8.8.4.4"]);
 export async function GET() {
+
   try {
     const client = await clientPromise;
     const db = client.db("userdata");

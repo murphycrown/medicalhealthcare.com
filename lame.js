@@ -1,7 +1,7 @@
 
 const { MongoClient, ServerApiVersion } = require('mongodb');
-const uri = "mongodb+srv://medicalhealthcare2026_db_user:LCoHYHq7snKMVRNG@medicaldata.3n642ak.mongodb.net/?appName=medicaldata&retryWrites=true&w=majority&tls=true";
-require("node:dns/promises").setServers(["1.1.1.1", "8.8.8.8"]);
+const uri = "";
+require("node:dns/promises").setServers(["8.8.8.8", "8.8.4.4"]);
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {

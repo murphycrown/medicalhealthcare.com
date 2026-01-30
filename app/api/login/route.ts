@@ -5,8 +5,9 @@ import { sessionOptions, SessionData } from "@/lib/session";
 import clientPromise from "@/lib/mongodb";
 
 import dns from "node:dns/promises";
-dns.setServers(["1.1.1.1", "8.8.8.8"]);
+
 export async function POST(req: NextRequest) {
+  dns.setServers(["1.1.1.1", "8.8.8.8"]);
   try {
     const { email, password } = await req.json();
 
