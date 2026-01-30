@@ -17,7 +17,7 @@ export function middleware(req: NextRequest) {
     if (isLoggedIn) {
       return NextResponse.redirect(new URL("/main", req.url));
     }
-    return NextResponse.redirect(new URL("/login", req.url));
+    //return NextResponse.redirect(new URL("/login", req.url));
   }
 
   // 🔐 Protect /main
