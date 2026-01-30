@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Sparkles, User, Send, Brain, ChevronRight, Loader2, Menu, X } from "lucide-react";
+import { Sparkles, User, Send, Brain, ChevronRight, Loader2, Menu, X, ClipboardList, Plus, History } from "lucide-react";
 
 // --- Particle Animation Component (Reused from landing page for consistency) ---
 const ParticleBackground = () => {
@@ -236,6 +236,15 @@ const MessageBubble = ({ role, content, time }: any) => (
 export default function MainPage() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [activeTab, setActiveTab] = useState("overview");
+    const [medicalRecords, setMedicalRecords] = useState<any[]>([]);
+    const [isSubmittingRecord, setIsSubmittingRecord] = useState(false);
+    const [recordForm, setRecordForm] = useState({
+        type: "Blood Pressure",
+        systolic: "",
+        diastolic: "",
+        heartRate: "",
+        analysis: ""
+    });
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [message, setMessage] = useState("");
@@ -306,6 +315,109 @@ export default function MainPage() {
         }
     };
 
+    const handleTagClick = async (tagLabel: string) => {
+        if (tagLabel === "Analyze Lab Results") {
+            setIsLoading(true);
+            try {
+                // Fetch latest records
+                const res = await fetch("/api/medical-records");
+                const data = await res.json();
+                const records = data.records || [];
+
+                let prompt = "Please analyze my clinical lab results. ";
+                if (records.length > 0) {
+                    prompt += "\n\nHere is my recent clinical history:\n";
+                    records.forEach((rec: any, i: number) => {
+                        prompt += `\nRecord ${i + 1} (${new Date(rec.createdAt).toLocaleDateString()}):`;
+                        prompt += `\n- Type: ${rec.type}`;
+                        if (rec.systolic) prompt += `\n- BP: ${rec.systolic}/${rec.diastolic} mmHg`;
+                        if (rec.heartRate) prompt += `\n- HR: ${rec.heartRate} bpm`;
+                        if (rec.analysis) prompt += `\n- Prior Analysis: ${rec.analysis}`;
+                    });
+                    prompt += "\n\nPlease provide a comprehensive assessment based on these data points.";
+                } else {
+                    prompt += "\n(No clinical history found in my records. Please provide general guidance on what lab values usually mean.)";
+                }
+
+                const userMessage = {
+                    role: 'user',
+                    content: prompt,
+                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                };
+                setChatHistory(prev => [...prev, userMessage]);
+
+                const response = await fetch("/api/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: prompt }),
+                });
+
+                if (!response.ok) throw new Error("API call failed");
+                const aiResponse = await response.json();
+
+                setChatHistory(prev => [...prev, {
+                    role: 'assistant',
+                    content: typeof aiResponse === 'string' ? aiResponse : (aiResponse.message || "Analysis complete."),
+                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                }]);
+            } catch (error) {
+                console.error("Tag action error:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        } else {
+            setMessage(tagLabel);
+        }
+    };
+
+    const fetchRecords = async () => {
+        try {
+            const res = await fetch("/api/medical-records");
+            if (res.ok) {
+                const data = await res.json();
+                setMedicalRecords(data.records || []);
+            }
+        } catch (error) {
+            console.error("Failed to fetch records:", error);
+        }
+    };
+
+    useEffect(() => {
+        if (activeTab === "records") {
+            fetchRecords();
+        }
+    }, [activeTab]);
+
+    const handleRecordSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSubmittingRecord(true);
+        try {
+            const res = await fetch("/api/medical-records", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(recordForm),
+            });
+
+            if (res.ok) {
+                setRecordForm({
+                    type: "Blood Pressure",
+                    systolic: "",
+                    diastolic: "",
+                    heartRate: "",
+                    analysis: ""
+                });
+                fetchRecords();
+            } else {
+                alert("Failed to save record");
+            }
+        } catch (error) {
+            console.error("Record submit error:", error);
+            alert("Error saving record");
+        } finally {
+            setIsSubmittingRecord(false);
+        }
+    };
+
 
     const Signout = () => {
         fetch("/api/logout", { method: "POST" })
@@ -364,6 +476,13 @@ export default function MainPage() {
                         active={activeTab === "chat"}
                         onClick={setActiveTab}
                         icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>}
+                    />
+                    <SidebarItem
+                        id="records"
+                        label="Medical Records"
+                        active={activeTab === "records"}
+                        onClick={setActiveTab}
+                        icon={<ClipboardList size={20} />}
                     />
                     <SidebarItem
                         id="profile"
@@ -581,7 +700,7 @@ export default function MainPage() {
                                         ].map((tag) => (
                                             <button
                                                 key={tag.label}
-                                                onClick={() => setMessage(tag.label)}
+                                                onClick={() => handleTagClick(tag.label)}
                                                 disabled={isLoading}
                                                 type="button"
                                                 className="text-[10px] uppercase tracking-wider font-bold text-slate-500 hover:text-blue-400 border border-white/5 hover:border-blue-500/20 px-4 py-2 rounded-xl transition-all bg-white/[0.02] hover:bg-white/[0.05] flex items-center gap-2"
@@ -593,6 +712,154 @@ export default function MainPage() {
                                     </div>
                                 </form>
                                 <div className="absolute -inset-4 bg-blue-500/5 blur-3xl rounded-full pointer-events-none -z-10" />
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === "records" && (
+                        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                            <header>
+                                <h2 className="text-3xl font-bold text-white tracking-tight">Medical Records</h2>
+                                <p className="text-slate-400 mt-1">Manage and track your clinical data history.</p>
+                            </header>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                {/* New Record Form */}
+                                <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-6 h-fit">
+                                    <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                        <Plus size={20} className="text-blue-400" />
+                                        Log New Vitals
+                                    </h3>
+                                    <form onSubmit={handleRecordSubmit} className="space-y-4">
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Record Type</label>
+                                            <select
+                                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white outline-none focus:border-blue-500/50 transition-all text-sm appearance-none"
+                                                value={recordForm.type}
+                                                onChange={e => setRecordForm({ ...recordForm, type: e.target.value })}
+                                            >
+                                                <option className="bg-[#050B14]">Blood Pressure</option>
+                                                <option className="bg-[#050B14]">Heart Rate Scan</option>
+                                                <option className="bg-[#050B14]">Lab Results Analysis</option>
+                                                <option className="bg-[#050B14]">General Vitals</option>
+                                            </select>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Systolic</label>
+                                                <input
+                                                    type="number"
+                                                    placeholder="120"
+                                                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white outline-none focus:border-blue-500/50 transition-all text-sm"
+                                                    value={recordForm.systolic}
+                                                    onChange={e => setRecordForm({ ...recordForm, systolic: e.target.value })}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Diastolic</label>
+                                                <input
+                                                    type="number"
+                                                    placeholder="80"
+                                                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white outline-none focus:border-blue-500/50 transition-all text-sm"
+                                                    value={recordForm.diastolic}
+                                                    onChange={e => setRecordForm({ ...recordForm, diastolic: e.target.value })}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Heart Rate (bpm)</label>
+                                            <input
+                                                type="number"
+                                                placeholder="72"
+                                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white outline-none focus:border-blue-500/50 transition-all text-sm"
+                                                value={recordForm.heartRate}
+                                                onChange={e => setRecordForm({ ...recordForm, heartRate: e.target.value })}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Clinical Analysis</label>
+                                            <textarea
+                                                rows={3}
+                                                placeholder="Enter any additional notes or AI diagnostic results..."
+                                                className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white outline-none focus:border-blue-500/50 transition-all text-sm resize-none"
+                                                value={recordForm.analysis}
+                                                onChange={e => setRecordForm({ ...recordForm, analysis: e.target.value })}
+                                            />
+                                        </div>
+                                        <button
+                                            disabled={isSubmittingRecord}
+                                            className="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-2xl font-bold shadow-lg shadow-blue-500/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                        >
+                                            {isSubmittingRecord ? <Loader2 size={18} className="animate-spin" /> : <Plus size={18} />}
+                                            Save Medical Record
+                                        </button>
+                                    </form>
+                                </div>
+
+                                {/* Records History */}
+                                <div className="lg:col-span-2 space-y-4">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                                            <History size={20} className="text-teal-400" />
+                                            Clinical History
+                                        </h3>
+                                        <span className="text-xs text-slate-500 font-medium bg-white/5 px-3 py-1 rounded-full border border-white/10">
+                                            {medicalRecords.length} Records Found
+                                        </span>
+                                    </div>
+
+                                    <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+                                        {medicalRecords.length === 0 ? (
+                                            <div className="p-12 text-center backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl">
+                                                <div className="w-16 h-16 bg-blue-500/10 text-blue-400 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                                    <ClipboardList size={32} />
+                                                </div>
+                                                <h4 className="text-white font-bold mb-1">No Records Yet</h4>
+                                                <p className="text-slate-500 text-sm max-w-xs mx-auto">Your medical history is clear. Start by logging your current vitals using the clinical form.</p>
+                                            </div>
+                                        ) : (
+                                            medicalRecords.map((rec, i) => (
+                                                <div key={rec._id || i} className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-5 hover:border-white/20 transition-all group relative overflow-hidden">
+                                                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-2xl rounded-full" />
+                                                    <div className="flex justify-between items-start relative z-10">
+                                                        <div>
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <span className="text-xs font-bold text-blue-400 uppercase tracking-widest">{rec.type}</span>
+                                                                <span className="w-1 h-1 bg-slate-700 rounded-full" />
+                                                                <span className="text-[10px] text-slate-500">{new Date(rec.createdAt).toLocaleString()}</span>
+                                                            </div>
+                                                            <div className="flex gap-6 mt-4">
+                                                                {rec.systolic && (
+                                                                    <div>
+                                                                        <p className="text-[10px] text-slate-500 uppercase font-black mb-1">BP (Sys/Dia)</p>
+                                                                        <p className="text-xl font-bold text-white">{rec.systolic}<span className="text-slate-500 text-sm mx-1">/</span>{rec.diastolic}</p>
+                                                                    </div>
+                                                                )}
+                                                                {rec.heartRate && (
+                                                                    <div>
+                                                                        <p className="text-[10px] text-slate-500 uppercase font-black mb-1">Heart Rate</p>
+                                                                        <p className="text-xl font-bold text-white">{rec.heartRate}<span className="text-slate-500 text-sm ml-1">bpm</span></p>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            {rec.analysis && (
+                                                                <div className="mt-4 p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                                                                    <p className="text-xs text-slate-400 italic leading-relaxed">
+                                                                        <span className="text-blue-400 font-bold not-italic mr-1">Analysis:</span>
+                                                                        {rec.analysis}
+                                                                    </p>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className="p-2 rounded-xl bg-teal-500/10 text-teal-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <ChevronRight size={18} />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}
