@@ -252,6 +252,7 @@ export default function MainPage() {
         { role: 'assistant', content: 'Hi, I am your MediAI assistant. How can I help you today?', time: '10:30 AM' }
     ]);
     const [isLoading, setIsLoading] = useState(false);
+    const [latestVitals, setLatestVitals] = useState<any>(0);
     const router = useRouter();
     const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -383,6 +384,27 @@ export default function MainPage() {
     };
 
     useEffect(() => {
+        if (activeTab === "overview") {
+            const fetchLatest = async () => {
+                try {
+                    const res = await fetch("/api/medical-records");
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.records && data.records.length > 0) {
+                            setLatestVitals(data.records[0]);
+                        } else {
+                            setLatestVitals(0);
+                        }
+                    } else {
+                        setLatestVitals(0);
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch latest record:", error);
+                    setLatestVitals(0);
+                }
+            };
+            fetchLatest();
+        }
         if (activeTab === "records") {
             fetchRecords();
         }
@@ -572,11 +594,30 @@ export default function MainPage() {
                                     </h3>
 
                                     <div className="space-y-6 relative z-10">
-                                        {[
-                                            { area: "Neurological Stability", score: 92, status: "Optimal", color: "text-blue-400" },
-                                            { area: "Cardiovascular Rhythm", score: 85, status: "Monitor", color: "text-teal-400" },
-                                            { area: "Metabolic Activity Index", score: 78, status: "Alert", color: "text-amber-400" },
-                                        ].map((item, i) => (
+                                        {(latestVitals === 0 ? [
+                                            { area: "Systolic BP", score: 0, status: "No Data", color: "text-blue-400" },
+                                            { area: "Diastolic BP", score: 0, status: "No Data", color: "text-teal-400" },
+                                            { area: "Heart Rate", score: 0, status: "No Data", color: "text-amber-400" },
+                                        ] : [
+                                            {
+                                                area: "Systolic BP",
+                                                score: Math.min(100, (Number(latestVitals.systolic) / 180) * 100),
+                                                status: `${latestVitals.systolic} mmHg`,
+                                                color: "text-blue-400"
+                                            },
+                                            {
+                                                area: "Diastolic BP",
+                                                score: Math.min(100, (Number(latestVitals.diastolic) / 120) * 100),
+                                                status: `${latestVitals.diastolic} mmHg`,
+                                                color: "text-teal-400"
+                                            },
+                                            {
+                                                area: "Heart Rate",
+                                                score: Math.min(100, (Number(latestVitals.heartRate) / 150) * 100),
+                                                status: `${latestVitals.heartRate} bpm`,
+                                                color: "text-amber-400"
+                                            },
+                                        ]).map((item, i) => (
                                             <div key={i} className="group/item">
                                                 <div className="flex justify-between items-center mb-2">
                                                     <span className="text-slate-300 font-medium">{item.area}</span>
