@@ -711,40 +711,40 @@ export default function MainPage() {
 
                             <div className="relative">
                                 <form onSubmit={handleSendMessage} className="relative z-10">
-                                    <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 p-2 rounded-[32px] focus-within:border-blue-500/50 focus-within:bg-white/[0.05] transition-all shadow-2xl group/input">
-                                        <div className="flex items-center gap-2">
-                                            <div className="pl-4 text-slate-500">
-                                                <Sparkles size={18} />
+                                    <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 p-2.5 rounded-[32px] focus-within:border-blue-500/50 focus-within:bg-white/[0.05] transition-all shadow-2xl group/input">
+                                        <div className="flex items-center gap-3">
+                                            <div className="pl-5 text-slate-500">
+                                                <Sparkles size={20} />
                                             </div>
                                             <input
                                                 type="text"
                                                 value={message}
                                                 onChange={(e) => setMessage(e.target.value)}
                                                 disabled={isLoading}
-                                                placeholder="Ask about patient records, diagnostic criteria, or medical literature..."
-                                                className="flex-1 bg-transparent border-none outline-none py-4 text-sm text-white placeholder:text-slate-600 disabled:opacity-50"
+                                                placeholder="Ask about patient records..."
+                                                className="flex-1 bg-transparent border-none outline-none py-5 text-base md:text-lg text-white placeholder:text-slate-600 disabled:opacity-50"
                                             />
                                             <button
                                                 type="submit"
                                                 disabled={isLoading || !message.trim()}
-                                                className="mr-1 p-3.5 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 disabled:from-slate-800 disabled:to-slate-900 text-white rounded-[24px] transition-all shadow-lg hover:shadow-blue-500/20 active:scale-95 disabled:cursor-not-allowed group-hover/input:scale-105"
+                                                className="mr-1 p-4 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 disabled:from-slate-800 disabled:to-slate-900 text-white rounded-[24px] transition-all shadow-lg hover:shadow-blue-500/20 active:scale-95 disabled:cursor-not-allowed group-hover/input:scale-105"
                                             >
-                                                <Send size={18} fill="currentColor" />
+                                                <Send size={20} fill="currentColor" />
                                             </button>
                                         </div>
                                     </div>
-                                    <div className="flex flex-wrap justify-center gap-3 mt-6">
+                                    <div className="flex flex-wrap justify-center gap-4 mt-8">
                                         {[
-                                            { label: "Patient Summary", icon: <User size={12} /> },
-                                            { label: "Analyze Lab Results", icon: <Brain size={12} /> },
-                                            { label: "Search Literature", icon: <Sparkles size={12} /> }
+                                            { label: "Patient Summary", icon: <User size={14} /> },
+                                            { label: "Analyze Lab Results", icon: <Brain size={14} /> },
+                                            { label: "Search Literature", icon: <Sparkles size={14} /> }
                                         ].map((tag) => (
                                             <button
                                                 key={tag.label}
                                                 onClick={() => handleTagClick(tag.label)}
                                                 disabled={isLoading}
                                                 type="button"
-                                                className="text-[10px] uppercase tracking-wider font-bold text-slate-500 hover:text-blue-400 border border-white/5 hover:border-blue-500/20 px-4 py-2 rounded-xl transition-all bg-white/[0.02] hover:bg-white/[0.05] flex items-center gap-2"
+                                                className="text-xs md:text-sm uppercase tracking-wider font-bold text-slate-500 hover:text-blue-400 border border-white/5 hover:border-blue-500/20 px-6 py-3 rounded-2xl transition-all bg-white/[0.02] hover:bg-white/[0.05] flex items-center gap-3"
                                             >
                                                 {tag.icon}
                                                 {tag.label}
