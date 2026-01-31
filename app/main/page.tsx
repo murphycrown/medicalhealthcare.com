@@ -180,45 +180,45 @@ const StatCard = ({ title, value, unit, icon, color, trend }: any) => (
 );
 
 const MessageBubble = ({ role, content, time }: any) => (
-    <div className={`flex flex-col ${role === 'user' ? 'items-end' : 'items-start'} mb-8 group animate-in slide-in-from-bottom-2 duration-300`}>
-        <div className={`flex items-start gap-4 max-w-[95%] md:max-w-[85%] ${role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 border shadow-lg ${role === 'user'
+    <div className={`flex flex-col ${role === 'user' ? 'items-end' : 'items-start'} mb-3 group animate-in slide-in-from-bottom-2 duration-300`}>
+        <div className={`flex items-start gap-3 max-w-[95%] md:max-w-[75%] ${role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+            <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 border shadow-sm ${role === 'user'
                 ? "bg-blue-600/20 border-blue-500/30 text-blue-400"
-                : "bg-teal-500/20 border-teal-500/30 text-teal-400 shadow-[0_0_15px_rgba(45,212,191,0.2)]"
+                : "bg-teal-500/20 border-teal-500/30 text-teal-400"
                 }`}>
-                {role === 'user' ? <User size={18} /> : <Brain size={18} />}
+                {role === 'user' ? <User size={12} /> : <Brain size={12} />}
             </div>
 
-            <div className={`p-5 md:p-6 rounded-3xl text-base md:text-lg leading-relaxed shadow-xl ${role === 'user'
-                ? "bg-blue-600 text-white rounded-tr-none shadow-blue-500/10"
-                : "bg-white/[0.04] border border-white/10 text-slate-100 rounded-tl-none backdrop-blur-md"
+            <div className={`leading-relaxed ${role === 'user'
+                ? "py-1.5 px-3 bg-blue-600 text-white rounded-2xl rounded-tr-none shadow-md shadow-blue-500/10 text-sm"
+                : "py-0.5 text-slate-100 text-sm"
                 }`}>
-                <div className={`prose prose-invert prose-base md:prose-lg max-w-none ${role === 'user' ? '[&_p]:text-white' : '[&_p]:text-slate-100'}`}>
+                <div className={`prose prose-invert prose-sm max-w-none ${role === 'user' ? '[&_p]:text-white' : '[&_p]:text-slate-200'}`}>
                     <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         components={{
-                            p: ({ children }) => <p className="mb-4 last:mb-0 leading-relaxed">{children}</p>,
-                            ul: ({ children }) => <ul className="list-disc ml-6 space-y-2 my-4">{children}</ul>,
-                            ol: ({ children }) => <ol className="list-decimal ml-6 space-y-2 my-4">{children}</ol>,
-                            li: ({ children }) => <li className="pl-1">{children}</li>,
+                            p: ({ children }) => <p className="mb-1.5 last:mb-0 leading-relaxed text-sm">{children}</p>,
+                            ul: ({ children }) => <ul className="list-disc ml-4 space-y-1 my-1.5 text-sm">{children}</ul>,
+                            ol: ({ children }) => <ol className="list-decimal ml-4 space-y-1 my-1.5 text-sm">{children}</ol>,
+                            li: ({ children }) => <li className="pl-1 text-sm">{children}</li>,
                             code: (props: any) => {
                                 const { children, className, node, ...rest } = props;
                                 const match = /language-(\w+)/.exec(className || '');
                                 return match ? (
-                                    <pre className="bg-black/50 p-4 rounded-xl overflow-x-auto my-4 border border-white/10 shadow-inner">
-                                        <code className={`${className} text-sm md:text-base`} {...rest}>{children}</code>
+                                    <pre className="bg-black/40 p-2.5 rounded-lg overflow-x-auto my-1.5 border border-white/5">
+                                        <code className={`${className} text-xs`} {...rest}>{children}</code>
                                     </pre>
                                 ) : (
-                                    <code className="bg-white/10 px-2 py-0.5 rounded-md text-teal-300 font-mono text-sm md:text-base" {...rest}>{children}</code>
+                                    <code className="bg-white/10 px-1 py-0.5 rounded text-teal-300 font-mono text-xs" {...rest}>{children}</code>
                                 )
                             },
                             table: ({ children }) => (
-                                <div className="overflow-x-auto my-6 rounded-xl border border-white/10 shadow-2xl">
-                                    <table className="w-full text-left border-collapse text-sm md:text-base">{children}</table>
+                                <div className="overflow-x-auto my-3 rounded-lg border border-white/10">
+                                    <table className="w-full text-left border-collapse text-xs">{children}</table>
                                 </div>
                             ),
-                            th: ({ children }) => <th className="bg-white/10 p-4 text-xs md:text-sm font-bold border-b border-white/10 uppercase tracking-wider">{children}</th>,
-                            td: ({ children }) => <td className="p-4 border-b border-white/5 text-slate-300">{children}</td>,
+                            th: ({ children }) => <th className="bg-white/5 p-1.5 text-[10px] font-bold border-b border-white/10 uppercase tracking-wider">{children}</th>,
+                            td: ({ children }) => <td className="p-1.5 border-b border-white/5 text-slate-400">{children}</td>,
                             strong: ({ children }) => <strong className="font-bold text-white">{children}</strong>,
                         }}
                     >
@@ -227,7 +227,7 @@ const MessageBubble = ({ role, content, time }: any) => (
                 </div>
             </div>
         </div>
-        <span className={`text-xs text-slate-500 mt-2 px-14 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300`}>
+        <span className={`text-[10px] text-slate-500 mt-1 px-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300`}>
             {time}
         </span>
     </div>
@@ -713,40 +713,40 @@ export default function MainPage() {
 
                             <div className="relative">
                                 <form onSubmit={handleSendMessage} className="relative z-10">
-                                    <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 p-2.5 rounded-[32px] focus-within:border-blue-500/50 focus-within:bg-white/[0.05] transition-all shadow-2xl group/input">
-                                        <div className="flex items-center gap-3">
-                                            <div className="pl-5 text-slate-500">
-                                                <Sparkles size={20} />
+                                    <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 p-1 rounded-[32px] focus-within:border-blue-500/50 focus-within:bg-white/[0.05] transition-all shadow-2xl group/input">
+                                        <div className="flex items-center gap-2">
+                                            <div className="pl-3 text-slate-500">
+                                                <Sparkles size={14} />
                                             </div>
                                             <input
                                                 type="text"
                                                 value={message}
                                                 onChange={(e) => setMessage(e.target.value)}
                                                 disabled={isLoading}
-                                                placeholder="Ask about patient records..."
-                                                className="flex-1 bg-transparent border-none outline-none py-5 text-base md:text-lg text-white placeholder:text-slate-600 disabled:opacity-50"
+                                                placeholder="Ask anything..."
+                                                className="flex-1 bg-transparent border-none outline-none py-1.5 text-sm text-white placeholder:text-slate-600 disabled:opacity-50"
                                             />
                                             <button
                                                 type="submit"
                                                 disabled={isLoading || !message.trim()}
-                                                className="mr-1 p-4 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 disabled:from-slate-800 disabled:to-slate-900 text-white rounded-[24px] transition-all shadow-lg hover:shadow-blue-500/20 active:scale-95 disabled:cursor-not-allowed group-hover/input:scale-105"
+                                                className="mr-0.5 p-2 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 disabled:from-slate-800 disabled:to-slate-900 text-white rounded-full transition-all shadow-lg hover:shadow-blue-500/20 active:scale-95 disabled:cursor-not-allowed group-hover/input:scale-105"
                                             >
-                                                <Send size={20} fill="currentColor" />
+                                                <Send size={14} fill="currentColor" />
                                             </button>
                                         </div>
                                     </div>
-                                    <div className="flex flex-wrap justify-center gap-4 mt-8">
+                                    <div className="flex flex-wrap justify-center gap-2 mt-4">
                                         {[
-                                            { label: "Patient Summary", icon: <User size={14} /> },
-                                            { label: "Analyze Lab Results", icon: <Brain size={14} /> },
-                                            { label: "Search Literature", icon: <Sparkles size={14} /> }
+                                            { label: "Patient Summary", icon: <User size={10} /> },
+                                            { label: "Analyze Lab Results", icon: <Brain size={10} /> },
+                                            { label: "Search Literature", icon: <Sparkles size={10} /> }
                                         ].map((tag) => (
                                             <button
                                                 key={tag.label}
                                                 onClick={() => handleTagClick(tag.label)}
                                                 disabled={isLoading}
                                                 type="button"
-                                                className="text-xs md:text-sm uppercase tracking-wider font-bold text-slate-500 hover:text-blue-400 border border-white/5 hover:border-blue-500/20 px-6 py-3 rounded-2xl transition-all bg-white/[0.02] hover:bg-white/[0.05] flex items-center gap-3"
+                                                className="text-[10px] uppercase tracking-wider font-bold text-slate-500 hover:text-blue-400 border border-white/5 hover:border-blue-500/20 px-3 py-1.5 rounded-2xl transition-all bg-white/[0.02] hover:bg-white/[0.05] flex items-center gap-2"
                                             >
                                                 {tag.icon}
                                                 {tag.label}
