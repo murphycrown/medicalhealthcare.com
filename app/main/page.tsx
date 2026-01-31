@@ -180,44 +180,46 @@ const StatCard = ({ title, value, unit, icon, color, trend }: any) => (
 );
 
 const MessageBubble = ({ role, content, time }: any) => (
-    <div className={`flex flex-col ${role === 'user' ? 'items-end' : 'items-start'} mb-6 group animate-in slide-in-from-bottom-2 duration-300`}>
-        <div className={`flex items-start gap-3 max-w-[85%] ${role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border ${role === 'user'
+    <div className={`flex flex-col ${role === 'user' ? 'items-end' : 'items-start'} mb-8 group animate-in slide-in-from-bottom-2 duration-300`}>
+        <div className={`flex items-start gap-4 max-w-[95%] md:max-w-[85%] ${role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 border shadow-lg ${role === 'user'
                 ? "bg-blue-600/20 border-blue-500/30 text-blue-400"
                 : "bg-teal-500/20 border-teal-500/30 text-teal-400 shadow-[0_0_15px_rgba(45,212,191,0.2)]"
                 }`}>
-                {role === 'user' ? <User size={14} /> : <Brain size={14} />}
+                {role === 'user' ? <User size={18} /> : <Brain size={18} />}
             </div>
 
-            <div className={`p-4 rounded-2xl text-sm leading-relaxed ${role === 'user'
-                ? "bg-blue-600 text-white rounded-tr-none shadow-lg shadow-blue-500/10"
-                : "bg-white/[0.03] border border-white/10 text-slate-200 rounded-tl-none backdrop-blur-md shadow-xl"
+            <div className={`p-5 md:p-6 rounded-3xl text-base md:text-lg leading-relaxed shadow-xl ${role === 'user'
+                ? "bg-blue-600 text-white rounded-tr-none shadow-blue-500/10"
+                : "bg-white/[0.04] border border-white/10 text-slate-100 rounded-tl-none backdrop-blur-md"
                 }`}>
-                <div className={`prose prose-invert prose-sm max-w-none ${role === 'user' ? '[&_p]:text-white' : '[&_p]:text-slate-200'}`}>
+                <div className={`prose prose-invert prose-base md:prose-lg max-w-none ${role === 'user' ? '[&_p]:text-white' : '[&_p]:text-slate-100'}`}>
                     <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         components={{
-                            p: ({ children }) => <p className="mb-0 last:mb-0">{children}</p>,
-                            ul: ({ children }) => <ul className="list-disc ml-4 space-y-1 my-2">{children}</ul>,
-                            ol: ({ children }) => <ol className="list-decimal ml-4 space-y-1 my-2">{children}</ol>,
+                            p: ({ children }) => <p className="mb-4 last:mb-0 leading-relaxed">{children}</p>,
+                            ul: ({ children }) => <ul className="list-disc ml-6 space-y-2 my-4">{children}</ul>,
+                            ol: ({ children }) => <ol className="list-decimal ml-6 space-y-2 my-4">{children}</ol>,
+                            li: ({ children }) => <li className="pl-1">{children}</li>,
                             code: (props: any) => {
                                 const { children, className, node, ...rest } = props;
                                 const match = /language-(\w+)/.exec(className || '');
                                 return match ? (
-                                    <pre className="bg-black/40 p-3 rounded-lg overflow-x-auto my-2 border border-white/5">
-                                        <code className={className} {...rest}>{children}</code>
+                                    <pre className="bg-black/50 p-4 rounded-xl overflow-x-auto my-4 border border-white/10 shadow-inner">
+                                        <code className={`${className} text-sm md:text-base`} {...rest}>{children}</code>
                                     </pre>
                                 ) : (
-                                    <code className="bg-white/10 px-1 py-0.5 rounded text-teal-300" {...rest}>{children}</code>
+                                    <code className="bg-white/10 px-2 py-0.5 rounded-md text-teal-300 font-mono text-sm md:text-base" {...rest}>{children}</code>
                                 )
                             },
                             table: ({ children }) => (
-                                <div className="overflow-x-auto my-3 rounded-lg border border-white/10">
-                                    <table className="w-full text-left border-collapse">{children}</table>
+                                <div className="overflow-x-auto my-6 rounded-xl border border-white/10 shadow-2xl">
+                                    <table className="w-full text-left border-collapse text-sm md:text-base">{children}</table>
                                 </div>
                             ),
-                            th: ({ children }) => <th className="bg-white/5 p-2 text-xs font-bold border-b border-white/10">{children}</th>,
-                            td: ({ children }) => <td className="p-2 text-xs border-b border-white/5">{children}</td>,
+                            th: ({ children }) => <th className="bg-white/10 p-4 text-xs md:text-sm font-bold border-b border-white/10 uppercase tracking-wider">{children}</th>,
+                            td: ({ children }) => <td className="p-4 border-b border-white/5 text-slate-300">{children}</td>,
+                            strong: ({ children }) => <strong className="font-bold text-white">{children}</strong>,
                         }}
                     >
                         {content}
@@ -225,7 +227,7 @@ const MessageBubble = ({ role, content, time }: any) => (
                 </div>
             </div>
         </div>
-        <span className={`text-[10px] text-slate-500 mt-2 px-11 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300`}>
+        <span className={`text-xs text-slate-500 mt-2 px-14 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300`}>
             {time}
         </span>
     </div>
